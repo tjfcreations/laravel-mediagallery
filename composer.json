@@ -1,0 +1,29 @@
+{
+    "name": "tjall/laravel-mediagallery",
+    "description": "A wrapper for Laravel Media Library by Spatie to add more often-used functionality.",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Tjall\\MediaGallery\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Tjalling Feenstra",
+            "email": "hello@tjalling.net"
+        }
+    ],
+    "require": {
+        "filament/support": "^3.3",
+        "filament/filament": "^3.3",
+        "spatie/laravel-medialibrary": "^11.12"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Tjall\\MediaGallery\\MediaGalleryServiceProvider"
+            ]
+        }
+    }
+}
