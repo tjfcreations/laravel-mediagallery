@@ -18,7 +18,8 @@
         "filament/support": "^3.3",
         "filament/filament": "^3.3",
         "spatie/laravel-medialibrary": "^11.12",
-        "filament/forms": "^3.3"
+        "filament/forms": "^3.3",
+        "tjall/laravel-modeltranslations": "@dev"
     },
     "extra": {
         "laravel": {
@@ -26,5 +27,14 @@
                 "Tjall\\MediaGallery\\MediaGalleryServiceProvider"
             ]
         }
-    }
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../laravel-*",
+            "options": {
+                "symlink": true
+            }
+        }
+    ]
 }

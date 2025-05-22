@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1205379151f6e3c9aa279f455535aba4",
+    "content-hash": "168232004e01eef1245d0df928001d8c",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -7497,6 +7497,42 @@
             "time": "2024-12-21T16:25:41+00:00"
         },
         {
+            "name": "tjall/laravel-modeltranslations",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "../laravel-modeltranslations",
+                "reference": "73d31fcb59e33a1dbc2c25211b7c6682336abf13"
+            },
+            "require": {
+                "filament/filament": "^3.3",
+                "filament/support": "^3.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Tjall\\ModelTranslations\\ModelTranslationsServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Tjall\\ModelTranslations\\": "src/"
+                }
+            },
+            "authors": [
+                {
+                    "name": "Tjalling Feenstra",
+                    "email": "hello@tjalling.net"
+                }
+            ],
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
             "name": "vlucas/phpdotenv",
             "version": "v5.6.2",
             "source": {
@@ -7716,7 +7752,9 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "tjall/laravel-modeltranslations": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {},
