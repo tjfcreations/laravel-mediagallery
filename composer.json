@@ -17,7 +17,8 @@
     "require": {
         "filament/support": "^3.3",
         "filament/filament": "^3.3",
-        "spatie/laravel-medialibrary": "^11.12"
+        "spatie/laravel-medialibrary": "^11.12",
+        "filament/forms": "^3.3"
     },
     "extra": {
         "laravel": {
