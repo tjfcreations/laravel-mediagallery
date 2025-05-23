@@ -47,16 +47,17 @@ class MediaGalleryEditor extends Field {
             ]);
         });
 
-        $this->dehydrateStateUsing(function (MediaGalleryEditor $component) {
+        $this->dehydrateStateUsing(function (MediaGalleryEditor $component) {           
             $state = $component->getState();
             $meta = $state['meta'] ?? [];
 
-            dd($state['meta']);
             foreach ($state['meta'] as $media_item_id => $meta) {
                 $item = MediaItem::find($media_item_id);
                 $item->setMeta($meta);
                 $item->save();
             }
+
+            unset($state['meta']);
 
             return $state;
         });

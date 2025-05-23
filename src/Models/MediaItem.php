@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class MediaItem extends Media {
     /** @use HasFactory<\Database\Factories\MediaItemFactory> */
@@ -14,7 +15,7 @@ class MediaItem extends Media {
     protected $table = 'media_items';
 
     public function getUrl(string $conversionName = ''): string {
-        if($this->size <= 1) {
+        if ($this->size <= 1) {
             return "https://picsum.photos/seed/{$this->id}/900/900";
         }
 
@@ -49,18 +50,26 @@ class MediaItem extends Media {
     }
 
     public function getMeta() {
-        return [
-            'author' => $this->getCustomProperty('meta.author'),
-            'date' => $this->getCustomProperty('meta.date'),
-            'description' => $this->getCustomProperty('meta.description')
-        ];
+        return $this->only(['author', 'date', 'description']);
     }
 
     public function setMeta(array $meta) {
-        return $this->setCustomProperty('meta', $meta);
+        // dd($meta);
+        $this->setCustomProperty('meta', $meta);
+
+        return $this;
     }
 
-    public function getDescription() {
-        return $this->getMeta()['description'];
+    // Attribute getters for Filament
+    public function getAuthorAttribute() {
+        return $this->getCustomProperty('meta.author');
+    }
+
+    public function getDescriptionAttribute() {
+        return $this->getCustomProperty('meta.description');
+    }
+
+    public function getDateAttribute() {
+        return $this->getCustomProperty('meta.date');
     }
 }

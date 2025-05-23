@@ -13,19 +13,17 @@
         x-on:media-upload-error.window="onMediaUploadError($event.detail.files)" 
         x-data="{ 
             items: @js($field->getItems()), 
-            uploadsIndex: 0,
-            uploads: [],
+            uploads: {},
             onMediaUploadStart(files) {
                 for(const file of files) {
                     const reader = new FileReader();
                     reader.onload = (e) => {
-                        this.uploads.push({
-                            id: file.id,
+                        this.uploads[file.id] = {
                             name: file.inputFile.name,
                             size: file.inputFile.size,
                             dataURL: e.target.result,
                             isPreview: true
-                        });
+                        };
                     }
                     reader.readAsDataURL(file.inputFile);
                 }
@@ -37,7 +35,11 @@
                 this.removeUploads(files);
             },
             removeUploads(files) {
-                this.uploads = this.uploads.filter(u => !files.some(f => f.id === u.id));
+                return;
+                files.forEach(file => {
+                    if (!this.uploads[file.id]) return;
+                    delete this.uploads[file.id];
+                });
             }
         }">
         {{-- @livewire('media-gallery-editor-items', [
@@ -45,7 +47,7 @@
             'deleteAction' => $deleteAction,
             'expandAction' => $expandAction
         ]) --}}
-        <x-filament::grid x-sortable class="gap-4 mb-4" default="2" md="3" lg="4" xl="5">
+        <x-filament::grid x-sortable class="gap-4 mb-4" default="2" md="3" lg="4" xl="5" x-ref="mediaItemsContainer">
             @foreach ($field->getItems() as $item)
                 @php
                     if (!$item->isPreview) {
@@ -60,9 +62,11 @@
                     :expandAction="$expandActionWithArgs" 
                     :deleteAction="$deleteActionWithArgs" />
             @endforeach
-            <template x-for="upload in uploads" :key="upload.id">
+            <template x-for="(upload, id) in uploads" :key="id" x-ref="uploads">
                 <x-laravel-mediagallery::media-gallery-editor-item
-                    class="opacity-50 pointer-events-none"
+                    x-bind:data-upload-id="id"
+                    x-on:wire:click="mountFormComponentAction('data.gallery', 'expand', { item: 3 })"
+                    {{-- class="opacity-50 pointer-events-none" --}}
                     :id="$this->getId()" 
                     :field="$field"
                     :expandAction="$expandAction"

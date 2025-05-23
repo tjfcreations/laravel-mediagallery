@@ -16,10 +16,10 @@
     <div>
         <div class="fi-fo-repeater-item-header flex items-center gap-x-3 overflow-hidden px-4 py-3">
             <ul class="flex items-center gap-x-3">
-                <li>{{ $expandAction }}</li>
+                <li data-action="expand">{{ $expandAction }}</li>
             </ul>
             <ul class="ms-auto flex items-center gap-x-3">
-                <li>{{ $deleteAction }}</li>
+                <li data-action="delete">{{ $deleteAction }}</li>
             </ul>
         </div>
         <div class="fi-fo-repeater-item-content p-4 relative">
