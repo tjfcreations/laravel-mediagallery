@@ -3,11 +3,10 @@
 namespace Tjall\MediaGallery\Forms\Components;
 
 use Closure;
-use App\Helpers\Locale;
+use Tjall\ModelTranslations\Helpers\ModelTranslations;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Field;
 use Filament\Forms\Form;
-use Filament\Forms\Components\FileUpload;
 use Filament\Support\Facades\FilamentIcon;
 use Filament\Support\Enums\ActionSize;
 use Filament\Forms\Components\Grid;
@@ -17,17 +16,17 @@ use Illuminate\Database\Eloquent\Collection;
 use Tjall\MediaGallery\Models\MediaItem;
 
 class MediaGalleryEditor extends Field {
-    protected string $view = 'laravel-mediagallery::forms.components.media-gallery-editor.index';
+    protected string $view = 'laravel-mediagallery::forms.components.media-gallery-editor';
 
     protected ?Closure $modifyDeleteActionUsing = null;
     protected ?Closure $modifyExpandActionUsing = null;
 
-    public $items = [];
+    public array $previews = [];
 
     protected function setUp(): void {
         parent::setUp();
 
-        $this->columnSpanFull(); 
+        $this->columnSpanFull();
 
         $this->registerActions([
             fn(MediaGalleryEditor $component): Action => $component->getDeleteAction(),
@@ -35,10 +34,11 @@ class MediaGalleryEditor extends Field {
         ]);
 
         $this->afterStateHydrated(function (MediaGalleryEditor $component, ?array $state) {
-            $items = $component->getItems();
+            $media = $component->getRecord()->getMedia();
+
             $meta = [];
 
-            foreach ($items as $item) {
+            foreach ($media as $item) {
                 $meta[$item->id] = $item->getMeta();
             }
 
@@ -62,41 +62,51 @@ class MediaGalleryEditor extends Field {
         });
     }
 
+    public function getItems(): array {
+        $items = [];
+
+        foreach ($this->getRecord()->getMedia() as $media_item) {
+            $items[] = (object) ['media' => $media_item, 'id' => $media_item->id, 'isPreview' => false];
+        }
+
+        // foreach ($this->previews as $file) {
+        //     $items[] = (object) ['file' => $file, 'id' => $file->getFilename(), 'isPreview' => true];
+        // }
+
+        return $items;
+    }
+
     protected function getExpandModalForm(Form $form, array $arguments) {
-        $is_multi_locale = Locale::isMultiLocale();
-        
+        $is_multi_locale = ModelTranslations::isMultiLocale();
+
         return $form
             ->schema([
                 Grid::make()
-                ->schema([
-                    Grid::make(2)->schema([
-                        TextInput::make("author")
-                            ->label('Auteur')
-                            ->placeholder('Auteur'),
-                        TextInput::make("date")
-                            ->label('Datum')
-                            ->type('date'),
-                    ]),
-                    $is_multi_locale
-                        ? null
-                        : Textarea::make("description")
-                        ->label('Beschrijving')
-                        ->rows(4)
-                        ->columnSpan('full'),
-                ])
-                ->columns(1)
+                    ->schema([
+                        Grid::make(2)->schema([
+                            TextInput::make("author")
+                                ->label('Auteur')
+                                ->placeholder('Auteur'),
+                            TextInput::make("date")
+                                ->label('Datum')
+                                ->type('date'),
+                        ]),
+                        $is_multi_locale
+                            ? null
+                            : Textarea::make("description")
+                            ->label('Beschrijving')
+                            ->rows(4)
+                            ->columnSpan('full'),
+                    ])
+                    ->columns(1)
             ]);
-    }
-
-    public function getItems(): Collection {
-        return $this->getRecord()->getMedia();
     }
 
     public function getDeleteAction(): Action {
         $action = Action::make($this->getDeleteActionName())
             ->label(__('filament-forms::components.repeater.actions.delete.label'))
             ->icon(FilamentIcon::resolve('forms::components.repeater.actions.delete') ?? 'heroicon-m-trash')
-            ->color('danger')
+            ->color('primary')
             ->action(function (array $arguments, MediaGalleryEditor $component): void {
                 $items = $component->getState();
                 unset($items[$arguments['item']]);
@@ -117,8 +127,7 @@ class MediaGalleryEditor extends Field {
         return $action;
     }
 
-    public function deleteAction(?Closure $callback): static
-    {
+    public function deleteAction(?Closure $callback): static {
         $this->modifyDeleteActionUsing = $callback;
 
         return $this;
@@ -135,10 +144,10 @@ class MediaGalleryEditor extends Field {
             ->color('primary')
             ->iconButton()
             ->size(ActionSize::Small)
-            ->form(function(Form $form, array $arguments, MediaGalleryEditor $component) {
+            ->form(function (Form $form, array $arguments, MediaGalleryEditor $component) {
                 return $this->getExpandModalForm($form, $arguments, $component);
             })
-            ->mountUsing(function(Form $form, array $arguments, MediaGalleryEditor $component) {
+            ->mountUsing(function (Form $form, array $arguments, MediaGalleryEditor $component) {
                 $item_id = $arguments['item'];
                 $meta = $component->getState()['meta'][$item_id];
 
@@ -164,8 +173,7 @@ class MediaGalleryEditor extends Field {
         return $action;
     }
 
-    public function expandAction(?Closure $callback): static
-    {
+    public function expandAction(?Closure $callback): static {
         $this->modifyExpandActionUsing = $callback;
 
         return $this;

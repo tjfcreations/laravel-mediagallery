@@ -36,5 +36,8 @@
                 "symlink": true
             }
         }
-    ]
+    ],
+    "require-dev": {
+        "illuminate/support": "*"
+    }
 }
