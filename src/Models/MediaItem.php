@@ -19,7 +19,11 @@ class MediaItem extends Media {
             return "https://picsum.photos/seed/{$this->id}/900/900";
         }
 
-        return parent::getUrl($conversionName);
+        if($this->hasGeneratedConversion($conversionName)) {
+            return parent::getUrl($conversionName);
+        }
+
+        return parent::getUrl();
     }
 
     /**
@@ -33,43 +37,17 @@ class MediaItem extends Media {
         return $this->getFirstMediaUrl('images', $size);
     }
 
-    /**
-     * Set the filepath.
-     */
-    public function setResourcePath(string $path) {
-        $this->addMedia($path)
-            ->preservingOriginal()
-            ->withResponsiveImages()
-            ->toMediaCollection('images');
-
-        return $this;
-    }
-
     public function isVideo() {
         return $this->type == 'video' || $this->type == 'embed';
     }
 
     public function getMeta() {
-        return $this->only(['author', 'date', 'description']);
+        return $this->getCustomProperty('meta', []);
     }
 
     public function setMeta(array $meta) {
-        // dd($meta);
         $this->setCustomProperty('meta', $meta);
 
         return $this;
-    }
-
-    // Attribute getters for Filament
-    public function getAuthorAttribute() {
-        return $this->getCustomProperty('meta.author');
-    }
-
-    public function getDescriptionAttribute() {
-        return $this->getCustomProperty('meta.description');
-    }
-
-    public function getDateAttribute() {
-        return $this->getCustomProperty('meta.date');
     }
 }

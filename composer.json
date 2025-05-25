@@ -19,7 +19,7 @@
         "filament/filament": "^3.3",
         "spatie/laravel-medialibrary": "^11.12",
         "filament/forms": "^3.3",
-        "tjall/laravel-modeltranslations": "@dev"
+        "spatie/laravel-html": "^3.12"
     },
     "extra": {
         "laravel": {
@@ -38,6 +38,7 @@
         }
     ],
     "require-dev": {
-        "illuminate/support": "*"
+        "illuminate/support": "*",
+        "tjall/laravel-modeltranslations": "@dev"
     }
 }

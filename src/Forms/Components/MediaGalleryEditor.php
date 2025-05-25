@@ -2,211 +2,215 @@
 
 namespace Tjall\MediaGallery\Forms\Components;
 
-use Closure;
-use Tjall\ModelTranslations\Helpers\ModelTranslations;
 use Filament\Forms\Components\Actions\Action;
-use Filament\Forms\Components\Field;
-use Filament\Forms\Form;
-use Filament\Support\Facades\FilamentIcon;
-use Filament\Support\Enums\ActionSize;
-use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Textarea;
-use Illuminate\Database\Eloquent\Collection;
+use Filament\Forms\Components\Placeholder;
+use Illuminate\Support\HtmlString;
 use Tjall\MediaGallery\Models\MediaItem;
+use Tjall\MediaGallery\MediaUploadItem;
+use Filament\Forms\Components\Component;
+use Illuminate\Support\Facades\Blade;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
-class MediaGalleryEditor extends Field {
-    protected string $view = 'laravel-mediagallery::forms.components.media-gallery-editor';
-
-    protected ?Closure $modifyDeleteActionUsing = null;
-    protected ?Closure $modifyExpandActionUsing = null;
-
-    public array $previews = [];
+class MediaGalleryEditor extends Repeater {
+    protected $records = [];
 
     protected function setUp(): void {
         parent::setUp();
 
-        $this->columnSpanFull();
-
-        $this->registerActions([
-            fn(MediaGalleryEditor $component): Action => $component->getDeleteAction(),
-            fn(MediaGalleryEditor $component): Action => $component->getExpandAction()
-        ]);
-
-        $this->afterStateHydrated(function (MediaGalleryEditor $component, ?array $state) {
-            $media = $component->getRecord()->getMedia();
-
-            $meta = [];
-
-            foreach ($media as $item) {
-                $meta[$item->id] = $item->getMeta();
-            }
-
-            $component->state([
-                'meta' => $meta,
-            ]);
-        });
-
-        $this->dehydrateStateUsing(function (MediaGalleryEditor $component) {           
-            $state = $component->getState();
-            $meta = $state['meta'] ?? [];
-
-            foreach ($state['meta'] as $media_item_id => $meta) {
-                $item = MediaItem::find($media_item_id);
-                $item->setMeta($meta);
-                $item->save();
-            }
-
-            unset($state['meta']);
-
-            return $state;
-        });
-    }
-
-    public function getItems(): array {
-        $items = [];
-
-        foreach ($this->getRecord()->getMedia() as $media_item) {
-            $items[] = (object) ['media' => $media_item, 'id' => $media_item->id, 'isPreview' => false];
-        }
-
-        // foreach ($this->previews as $file) {
-        //     $items[] = (object) ['file' => $file, 'id' => $file->getFilename(), 'isPreview' => true];
-        // }
-
-        return $items;
-    }
-
-    protected function getExpandModalForm(Form $form, array $arguments) {
-        $is_multi_locale = ModelTranslations::isMultiLocale();
-
-        return $form
+        $this
             ->schema([
-                Grid::make()
-                    ->schema([
-                        Grid::make(2)->schema([
-                            TextInput::make("author")
-                                ->label('Auteur')
-                                ->placeholder('Auteur'),
-                            TextInput::make("date")
-                                ->label('Datum')
-                                ->type('date'),
-                        ]),
-                        $is_multi_locale
-                            ? null
-                            : Textarea::make("description")
-                            ->label('Beschrijving')
-                            ->rows(4)
-                            ->columnSpan('full'),
-                    ])
-                    ->columns(1)
-            ]);
-    }
+                $this->renderItemThumbnail('sm', null, true)
+            ])
+            ->extraItemActions([
+                $this->getEditMetaAction(),
+            ])
+            ->reorderable('order_column')
+            ->reorderableWithDragAndDrop(true)
+            ->columnSpanFull()
+            ->grid([
+                'default' => 2,
+                'md' => 3,
+                'lg' => 4,
+                'xl' => 5,
+                '2xl' => 6,
+            ])
+            ->addAction(function (Action $action) {
+                return $action->hidden();
+            })
+            ->registerActions([
+                fn(MediaGalleryEditor $component): Action => $component->getUploadStartAction(),
+                fn(MediaGalleryEditor $component): Action => $component->getUploadSuccessAction(),
+                fn(MediaGalleryEditor $component): Action => $component->getDeleteAction()
+            ])
+            ->afterStateHydrated(static function (MediaGalleryEditor $component, ?array $state): void {
+                $items = [];
 
-    public function getDeleteAction(): Action {
-        $action = Action::make($this->getDeleteActionName())
-            ->label(__('filament-forms::components.repeater.actions.delete.label'))
-            ->icon(FilamentIcon::resolve('forms::components.repeater.actions.delete') ?? 'heroicon-m-trash')
-            ->color('primary')
-            ->action(function (array $arguments, MediaGalleryEditor $component): void {
-                $items = $component->getState();
-                unset($items[$arguments['item']]);
+                $media_items = $component->getRecord()->media->sortBy('order_column');
+                foreach ($media_items as $media_item) {
+                    $items["item-{$media_item->id}"] = [
+                        'media_item' => $media_item,
+                        'is_uploading' => false,
+                        'meta' => $media_item->getMeta(),
+                        'order_column' => $media_item->order_column
+                    ];
+                }
 
                 $component->state($items);
 
                 $component->callAfterStateUpdated();
             })
-            ->iconButton()
-            ->size(ActionSize::Small);
+            ->dehydrateStateUsing(function(MediaGalleryEditor $component, array $state) {
+                $record = $component->getRecord();
+                $data = $component->getLivewire()->data;
+                
+                // files are uploaded with a suffix, merge them into a single array
+                $files = [];
+                foreach($data as $key => $file) {
+                    if(!str_starts_with($key, '_media-upload#')) continue;
 
-        if ($this->modifyDeleteActionUsing) {
-            $action = $this->evaluate($this->modifyDeleteActionUsing, [
-                'action' => $action,
-            ]) ?? $action;
-        }
+                    $item_id = explode('#', $key)[1];
+                    $files[$item_id] = $file;
+                }
+                
+                // array for storing media items that should not be deleted
+                $keep_media_items = [];
+                foreach($files as $item_id => $file) {
+                    $media_item = $record
+                        ->addMedia($file->getPathname())
+                        ->withCustomProperties([])
+                        ->toMediaCollection();
 
-        return $action;
+                    $keep_media_items[$media_item->id] = true;
+                }
+
+                // update media item meta and order
+                $item_order = 1;
+                foreach($state as $item_id => $data) {
+                    $media_item_id = intval(explode('-', $item_id)[1]);
+                    $media_item = MediaItem::find($media_item_id);
+                    $keep_media_items[$media_item->id] = true;
+
+                    $media_item->setMeta($data['meta']);
+                    $media_item->order_column = $item_order++;
+                    $media_item->save();
+                }
+
+                // delete media items that the user deleted
+                foreach($record->media as $media_item) {
+                    if(isset($keep_media_items[$media_item->id])) continue;
+                    $media_item->delete();
+                }
+            });
     }
 
-    public function deleteAction(?Closure $callback): static {
-        $this->modifyDeleteActionUsing = $callback;
-
-        return $this;
+    public static function make(string $name = ''): static {
+        return parent::make('_media-gallery-editor');
     }
 
-    public function getDeleteActionName(): string {
-        return 'delete';
-    }
+    public function getUploadStartAction() {
+        return Action::make('onUploadStart')
+            ->action(function (array $arguments, MediaGalleryEditor $component) {
+                $items = $component->getState();
 
-    public function getExpandAction(): Action {
-        $action = Action::make($this->getExpandActionName())
-            ->label(__('filament-forms::components.builder.actions.edit.label'))
-            ->icon(FilamentIcon::resolve('forms::components.repeater.actions.edit') ?? 'heroicon-m-pencil-square')
-            ->color('primary')
-            ->iconButton()
-            ->size(ActionSize::Small)
-            ->form(function (Form $form, array $arguments, MediaGalleryEditor $component) {
-                return $this->getExpandModalForm($form, $arguments, $component);
-            })
-            ->mountUsing(function (Form $form, array $arguments, MediaGalleryEditor $component) {
-                $item_id = $arguments['item'];
-                $meta = $component->getState()['meta'][$item_id];
+                foreach ($arguments['uploadIds'] as $upload_id) {
+                    $items["upload-{$upload_id}"] = [
+                        'upload_id' => $upload_id,
+                        'is_uploading' => true,
+                        'meta' => []
+                    ];
+                }
 
-                $form->fill($meta);
-            })
-            ->action(function (array $arguments, MediaGalleryEditor $component, array $data): void {
-                $state = $component->getState();
-                $item_id = $arguments['item'];
+                $component->state($items);
 
-                // Merge new meta data from the modal form
-                $state['meta'][$item_id] = $data;
-
-                $component->state($state);
                 $component->callAfterStateUpdated();
             });
-
-        if ($this->modifyExpandActionUsing) {
-            $action = $this->evaluate($this->modifyExpandActionUsing, [
-                'action' => $action,
-            ]) ?? $action;
-        }
-
-        return $action;
     }
 
-    public function expandAction(?Closure $callback): static {
-        $this->modifyExpandActionUsing = $callback;
+    public function getUploadSuccessAction() {
+        return Action::make('onUploadSuccess')
+            ->action(function (array $arguments, MediaGalleryEditor $component) {
+                $items = $component->getState();
 
-        return $this;
+                foreach ($arguments['uploadIds'] as $upload_id) {
+                    $items["upload-{$upload_id}"]['is_uploading'] = false;
+                }
+
+                $component->state($items);
+
+                $component->callAfterStateUpdated();
+            });
     }
 
-    public function getExpandActionName(): string {
-        return 'expand';
+    protected function renderItemThumbnail(string $conversion = 'sm', ?array $item = null, ?bool $progress = false): Placeholder {
+        $placeholder = Placeholder::make('thumbnail')
+            ->content(function (Component $component) use ($conversion, $item, $progress) {
+                $html = Blade::render('<x-laravel-mediagallery::media-gallery-editor-item-thumbnail :component="$component" :conversion="$conversion" :item="$item" :progress="$progress" />', [
+                    'conversion' => $conversion,
+                    'component' => $component,
+                    'item' => $item,
+                    'progress' => $progress
+                ]);
+                return new HtmlString($html);     
+            })
+            ->hiddenLabel()
+            ->columnSpanFull();
+
+        return $placeholder;
     }
 
-    // public function getReorderAction(): Action {
-    //     $action = Action::make($this->getReorderActionName())
-    //         ->label(__('filament-forms::components.repeater.actions.reorder.label'))
-    //         ->icon(FilamentIcon::resolve('forms::components.repeater.actions.reorder') ?? 'heroicon-m-arrows-up-down')
-    //         ->color('gray')
-    //         ->action(function (array $arguments, MediaGalleryEditor $component): void {
-    //             $items = [
-    //                 ...array_flip($arguments['items']),
-    //                 ...$component->getState(),
-    //             ];
+    protected function getItemMeta(string $item_id) {
+        return $this->getState()[$item_id]['meta'];
+    }
 
-    //             $component->state($items);
+    protected function setItemMeta(string $item_id, array $meta) {
+        $items = $this->getState();
+        $items[$item_id]['meta'] = $meta;
+        $this->state($items);
+    }
 
-    //             $component->callAfterStateUpdated();
-    //         })
-    //         ->livewireClickHandlerEnabled(false)
-    //         ->iconButton()
-    //         ->size(ActionSize::Small);
+    public function getEditMetaAction() {
+        return Action::make('editMeta')
+            ->label(__('filament-actions::edit.single.label'))
+            ->icon('heroicon-m-pencil-square')
+            ->form(function (array $arguments, MediaGalleryEditor $component) {
+                $item = $this->getState()[$arguments['item']];
 
-    //     return $action;
-    // }
+                $is_multi_locale = false;
 
-    // public function getReorderActionName(): string {
-    //     return 'reorder';
-    // }
+                return [
+                    $component->renderItemThumbnail('md', $item)
+                        ->extraAttributes([
+                            'class' => 'w-full aspect-square object-cover',
+                            'style' => 'max-width: 10rem;'
+                        ]),
+                    Grid::make(2)
+                        ->schema([
+                            TextInput::make('author')
+                                ->label('Auteur')
+                                ->placeholder('Jan de Vries'),
+                            TextInput::make('date')
+                                ->label('Gemaakt op')
+                                ->type('date'),
+                            $is_multi_locale
+                                ? null
+                                : Textarea::make('description')
+                                ->label('Beschrijving')
+                                ->rows(4)
+                                ->columnSpanFull(),
+                        ])
+                ];
+            })
+            ->modalHeading('Media bewerken')
+            ->modalSubmitActionLabel('Sluiten')
+            ->fillForm(function (array $arguments, MediaGalleryEditor $component) {
+                return $this->getItemMeta($arguments['item']);
+            })
+            ->action(function (array $arguments, MediaGalleryEditor $component, array $data) {
+                return $this->setItemMeta($arguments['item'], $data);
+            });
+    }
 }
