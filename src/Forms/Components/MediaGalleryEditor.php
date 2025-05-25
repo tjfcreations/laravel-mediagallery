@@ -63,8 +63,9 @@ class MediaGalleryEditor extends Repeater {
 
                 $component->callAfterStateUpdated();
             })
-            ->dehydrateStateUsing(function(MediaGalleryEditor $component, array $state) {
+            ->dehydrateStateUsing(function(MediaGalleryEditor $component) {
                 $record = $component->getRecord();
+                $items = $component->getState();
                 $data = $component->getLivewire()->data;
                 
                 // files are uploaded with a suffix, merge them into a single array
@@ -79,27 +80,30 @@ class MediaGalleryEditor extends Repeater {
                 // array for storing media items that should not be deleted
                 $keep_media_items = [];
                 foreach($files as $item_id => $file) {
-                    $media_item = $record
-                        ->addMedia($file->getPathname())
-                        ->withCustomProperties([])
-                        ->toMediaCollection();
+                    if(!isset($items[$item_id]['is_saved'])) {
+                        $media_item = $record
+                            ->addMedia($file->getPathname())
+                            ->withCustomProperties([])
+                            ->toMediaCollection();
+                    }
 
-                    $state[$item_id]['media_item_id'] = $media_item->id;
+                    $items[$item_id]['media_item'] = $media_item;
+                    $items[$item_id]['is_saved'] = true;
+
                     $keep_media_items[$media_item->id] = true;
                 }
 
                 // update media item meta and order
                 $item_order = 1;
-                foreach($state as $item_id => $data) {
-                    $media_item_id = $data['media_item_id'];
-                    if(!isset($media_item_id)) continue;
+                foreach($items as $item_id => $data) {
+                    if(!isset($data['media_item'])) continue;
 
-                    $media_item = MediaItem::find($media_item_id);
+                    $media_item = $data['media_item'];
                     $media_item->setMeta($data['meta']);
                     $media_item->order_column = $item_order++;
                     $media_item->save();
 
-                    $keep_media_items[$media_item_id] = true;
+                    $keep_media_items[$media_item->id] = true;
                 }
 
                 // delete media items that the user deleted
