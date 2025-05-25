@@ -84,19 +84,22 @@ class MediaGalleryEditor extends Repeater {
                         ->withCustomProperties([])
                         ->toMediaCollection();
 
+                    $state[$item_id]['media_item_id'] = $media_item->id;
                     $keep_media_items[$media_item->id] = true;
                 }
 
                 // update media item meta and order
                 $item_order = 1;
                 foreach($state as $item_id => $data) {
-                    $media_item_id = intval(explode('-', $item_id)[1]);
-                    $media_item = MediaItem::find($media_item_id);
-                    $keep_media_items[$media_item->id] = true;
+                    $media_item_id = $data['media_item_id'];
+                    if(!isset($media_item_id)) continue;
 
+                    $media_item = MediaItem::find($media_item_id);
                     $media_item->setMeta($data['meta']);
                     $media_item->order_column = $item_order++;
                     $media_item->save();
+
+                    $keep_media_items[$media_item_id] = true;
                 }
 
                 // delete media items that the user deleted

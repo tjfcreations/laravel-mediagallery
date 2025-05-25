@@ -28,15 +28,6 @@
             ]
         }
     },
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../laravel-*",
-            "options": {
-                "symlink": true
-            }
-        }
-    ],
     "require-dev": {
         "illuminate/support": "*",
         "tjall/laravel-modeltranslations": "@dev"
