@@ -80,6 +80,11 @@ class MediaGalleryEditor extends Repeater {
                 // array for storing media items that should not be deleted
                 $keep_media_items = [];
                 foreach($files as $item_id => $file) {
+                    // skip if the item was uploaded, but then removed
+                    if(!isset($items[$item_id])) continue;
+
+                    // prevent 'file not found error' when the user submits
+                    // the form twice
                     if(!isset($items[$item_id]['is_saved'])) {
                         $media_item = $record
                             ->addMedia($file->getPathname())
