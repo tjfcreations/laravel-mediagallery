@@ -1,7 +1,7 @@
-@props([
-    'accept' => null,
-    'statePath' => null
-])
+@php
+    $accept = implode(', ', $getAcceptedFileTypes());
+    $statePath = $getStatePath();
+@endphp
 
 <div x-data="{
     isDropping: false,
@@ -24,21 +24,26 @@
             return this.registerUpload({ file, dataUrl: URL.createObjectURL(file) });
         });
 
-        this.dispatchMediaUploadEvent('start', uploadIds);
+        this.mountAction('onUploadStart', { uploadIds }).then(() => {
+            uploadIds.forEach(uploadId => {
+                const upload = $store.uploads[uploadId];
 
-        $wire.uploadMultiple('{{ $statePath }}', files,
-            success => {
-                this.dispatchMediaUploadEvent('success', uploadIds);
-                uploadIds.forEach(uploadId => this.updateUpload(uploadId, { isUploading: false }));
-            },
-            error => { //an error occured
-                this.dispatchMediaUploadEvent('error', uploadIds);
-                uploadIds.forEach(uploadId => this.updateUpload(uploadId, { isUploading: false }));
-            },
-            event => { //upload progress was made
-                uploadIds.forEach(uploadId => this.updateUpload(uploadId, { progress: event.detail.progress }));
-            }
-        )
+                $wire.upload('{{ $statePath }}#upload-'+uploadId, upload.file,
+                    success => {
+                        this.mountAction('onUploadSuccess', { uploadIds: [ uploadId] });
+                        this.updateUpload(uploadId, { isUploading: false });
+                    },
+                    error => { //an error occured
+                        this.dispatchMediaUploadEvent('error', [ uploadId ]);
+                        this.updateUpload(uploadId, { isUploading: false });
+                    },
+                    event => { //upload progress was made
+                        this.updateUpload(uploadId, { progress: event.detail.progress });
+                    }
+                )
+            })
+        })
+
     },
     registerUpload(data) {
         const uploadId = this.uploadId++;
@@ -51,9 +56,8 @@
     updateUpload(uploadId, data) {
         $store.uploads[uploadId] = { ...$store.uploads[uploadId], ...data };
     },
-    dispatchMediaUploadEvent(name, uploadIds, detail = {}) {
-        const uploads = uploadIds.map(id => $store.uploads[id]);
-        return $dispatch(`media-upload-${name}`, { uploads, uploadIds, ...detail });
+    mountAction(name, arguments) {
+        return $wire.mountFormComponentAction('data._media-gallery-editor-repeater', name, arguments);
     }
 }" class="w-full">
     <div class="flex flex-col items-center justify-center w-full relative" x-on:drop="isDroppingFile = false"
@@ -68,9 +72,11 @@
                 id="file-upload-label">
                 <p class="text-lg max-w-none">Sleep hier je bestanden naartoe</p>
                 <p class="max-w-none">of</p>
-                <x-filament::button tag="div" class="cursor-pointer mt-1">Bestanden selecteren</x-filament::button>
+                <x-filament::button tag="div" class="cursor-pointer mt-1">Bestanden
+                    selecteren</x-filament::button>
             </label>
-            <input type="file" id="file-upload" multiple x-on:change="handleFileSelect" class="hidden" accept="{{ $accept }}" />
+            <input type="file" id="file-upload" multiple x-on:change="handleFileSelect" class="hidden"
+                accept="{{ $accept }}" />
         </x-filament::section>
     </div>
 </div>

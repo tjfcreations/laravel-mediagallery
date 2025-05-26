@@ -2,16 +2,21 @@
 
 namespace Tjall\MediaGallery;
 
-use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\InteractsWithMedia as InteractsWithSpatieMedia;
 use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tjall\MediaGallery\Models\MediaItem;
 
-trait InteractsWithMediaGallery {
-    use InteractsWithMedia;
+trait InteractsWithMedia {
+    use InteractsWithSpatieMedia;
 
     public function getMediaModel(): string {
         return MediaItem::class;
+    }
+
+    public function registerMediaCollections(): void {
+        $this->addMediaCollection('default')
+            ->useDisk(config('media-gallery.disk_name'));
     }
 
     public function registerMediaConversions(?Media $media = null): void {

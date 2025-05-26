@@ -15,12 +15,11 @@ class MediaGalleryServiceProvider extends PackageServiceProvider {
         $package
             ->name('laravel-mediagallery')
             ->hasViews('laravel-mediagallery')
+            ->hasConfigFile('media-gallery')
             ->discoversMigrations();
     }
 
     public function boot() {
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'laravel-mediagallery');
-
-        Livewire::component('media-upload', MediaUpload::class);
     }
 }
