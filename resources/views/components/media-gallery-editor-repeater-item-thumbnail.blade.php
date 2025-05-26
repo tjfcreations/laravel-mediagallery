@@ -32,7 +32,7 @@
     @if($is_upload)
         @if($progress)
             <div 
-                x-bind:style="'position: absolute; z-index: 10; height: 4px; bottom: 0; left: 0; right: 0; background-color: rgba(255, 255, 255, 0.5); transition: 300ms opacity ease-out;' + ({{ $alpine_store }}.isUploading ? '' : 'opacity: 0;')">
+                x-bind:style="'position: absolute; z-index: 10; height: 4px; bottom: 0; left: 0; right: 0; background-color: rgba(255, 255, 255, 0.75); transition: 300ms opacity ease-out;' + ({{ $alpine_store }}.isUploading ? '' : 'opacity: 0;')">
                 <div x-bind:style="'background: rgb({{ $colors['primary']['500'] }}); height: 100%; width: '+{{ $alpine_store }}.progress+'%;'"></div>
             </div>
         @endif
