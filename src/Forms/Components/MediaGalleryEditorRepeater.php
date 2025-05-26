@@ -103,7 +103,6 @@ class MediaGalleryEditorRepeater extends Repeater {
         $record = $this->getRecord();
         $items = $this->getState();
         $data = $this->getLivewire()->data;
-
         
         // merge all uploaded files into a single array
         $files = [];
@@ -149,6 +148,10 @@ class MediaGalleryEditorRepeater extends Repeater {
             if(isset($keep_media_items[$media_item->id])) continue;
             $media_item->delete();
         }
+
+        $this->state($items);
+
+        $this->callAfterStateUpdated();
     }
 
     protected function renderItemThumbnail(string $conversion = 'sm', ?array $item = null, ?bool $progress = false): Placeholder {
