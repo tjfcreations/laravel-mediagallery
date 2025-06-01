@@ -157,7 +157,7 @@ class MediaGalleryEditorRepeater extends Repeater {
     protected function renderItemThumbnail(string $conversion = 'sm', ?array $item = null, ?bool $progress = false): Placeholder {
         $placeholder = Placeholder::make('thumbnail')
             ->content(function (Component $component) use ($conversion, $item, $progress) {
-                $html = Blade::render('<x-laravel-mediagallery::media-gallery-editor-repeater-item-thumbnail :component="$component" :conversion="$conversion" :item="$item" :progress="$progress" />', [
+                $html = Blade::render('<x-media-gallery::filament.media-gallery-editor-repeater-item-thumbnail :component="$component" :conversion="$conversion" :item="$item" :progress="$progress" />', [
                     'conversion' => $conversion,
                     'component' => $component,
                     'item' => $item,

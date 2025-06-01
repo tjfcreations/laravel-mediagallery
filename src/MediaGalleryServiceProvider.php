@@ -14,12 +14,15 @@ class MediaGalleryServiceProvider extends PackageServiceProvider {
     public function configurePackage(Package $package): void {
         $package
             ->name('laravel-mediagallery')
-            ->hasViews('laravel-mediagallery')
+            ->hasViews('media-gallery')
             ->hasConfigFile('media-gallery')
             ->discoversMigrations();
     }
 
     public function boot() {
-        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'laravel-mediagallery');
+        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'media-gallery');
+        $this->publishes([
+            __DIR__.'/../resources/js' => public_path('js/tjall/media-gallery'),
+        ], 'public');
     }
 }
