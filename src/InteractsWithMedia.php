@@ -13,6 +13,11 @@ trait InteractsWithMedia {
         return MediaItem::class;
     }
 
+    public function getFirstMediaUrl(string $conversion): string {
+        $media = $this->getFirstMedia();
+        return $media->getUrl($conversion);
+    }
+
     public function registerMediaCollections(): void {
         $this->addMediaCollection('default')
             ->useDisk(config('media-gallery.disk_name'));
