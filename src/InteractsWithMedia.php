@@ -24,7 +24,7 @@ trait InteractsWithMedia {
                 ->fit($opts['fit'])
                 ->width($opts['width'])
                 ->height($opts['height'])
-                ->sharpen($opts['sharpen']);
+                ->sharpen(@$opts['sharpen'] ?? 0);
         }
     }
 }
