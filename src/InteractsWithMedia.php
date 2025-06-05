@@ -13,10 +13,6 @@ trait InteractsWithMedia {
         return MediaItem::class;
     }
 
-    public function getFallbackMediaUrl(string $collectionName = 'default', string $conversionName = '') {
-        return 'data:image/gif;base64,R0lGODlhAQABAHAAACwAAAAAAQABAIHu7u4AAAAAAAAAAAACAkQBADs=';
-    }
-
     public function registerMediaCollections(): void {
         $this->addMediaCollection('default')
             ->useDisk(config('media-gallery.disk_name'));
