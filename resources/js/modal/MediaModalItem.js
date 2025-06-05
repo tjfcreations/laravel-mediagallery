@@ -34,7 +34,6 @@ class MediaModalItem {
     
     loadImage(callback) {
         const img = document.createElement('img');
-        document.body.appendChild(img);
         img.onload = () => {
             if(this !== this.modal.getCurrentItem()) return;
             callback(img);
