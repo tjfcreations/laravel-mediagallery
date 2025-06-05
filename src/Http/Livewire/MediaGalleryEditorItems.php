@@ -14,7 +14,7 @@ class MediaGalleryEditorItems extends Component {
     protected $previews = [];
 
     public function render() {
-        return view('laravel-mediagallery::livewire.media-gallery-editor-items', [
+        return view('media-gallery::livewire.media-gallery-editor-items', [
             'items' => $this->getItems(),
             'deleteAction' => $this->deleteAction,
             'expandAction' => $this->expandAction

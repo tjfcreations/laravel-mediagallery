@@ -11,6 +11,6 @@
 
         public function render(): View
         {
-            return view('laravel-mediagallery::media-gallery.items');
+            return view('media-gallery::media-gallery.items');
         }
     }

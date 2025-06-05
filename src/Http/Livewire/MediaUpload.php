@@ -15,7 +15,7 @@ class MediaUpload extends Component {
     public string $statePath;
 
     public function render() {
-        return view('laravel-mediagallery::livewire.media-upload');
+        return view('media-gallery::livewire.media-upload');
     }
 
     public function updatedFiles() {
