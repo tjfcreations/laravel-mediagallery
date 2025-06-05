@@ -24,9 +24,11 @@ class MediaItem extends Media {
     protected $table = 'media_items';
 
     public function getUrl(string $conversionName = ''): string {
-        if ($this->size <= 1) {
+        if (!is_int($this->size) || $this->size <= 1) {
             $opts = MediaItem::CONVERSIONS[$conversionName] ?? MediaItem::CONVERSIONS['md'];
-            return "https://picsum.photos/seed/{$this->id}/{$opts['width']}/{$opts['height']}";
+            $ratio = (($this->id % 9) + 6) / 10;
+            $height = $opts['width'] * $ratio;
+            return "https://picsum.photos/seed/{$this->id}/{$opts['width']}/{$height}";
         }
 
         if($this->hasGeneratedConversion($conversionName)) {
@@ -37,7 +39,7 @@ class MediaItem extends Media {
     }
 
     public function isVideo() {
-        return 1;
+        return false;
     }
 
     public function serialize() {

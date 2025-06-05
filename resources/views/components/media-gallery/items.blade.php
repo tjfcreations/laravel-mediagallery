@@ -3,7 +3,8 @@
     'truncate' => 0, 
     'videoIndicator' => null, 
     'itemSlot' => null, 
-    'spotlightSlot' => null
+    'spotlightSlot' => null,
+    'size' => 'md'
 ])
 
 @php
@@ -11,13 +12,8 @@
 @endphp
 
 @foreach ($items as $i => $item)
-    @if ($i === 0)
-        <x-media-gallery::merged-slot :merge="$spotlightSlot" class="col-span-full">
-            <x-media-gallery::media-gallery.item :item="$item" :videoIndicator="$videoIndicator" :imgClass="$itemSlot->attributes->get('img-class') ?? $itemSlot->attributes->get('imgClass')" />
-        </x-media-gallery::merged-slot>
-    @else
-        <x-media-gallery::merged-slot :merge="$itemSlot">
-            <x-media-gallery::media-gallery.item :item="$item" :videoIndicator="$videoIndicator" :imgClass="$itemSlot->attributes->get('img-class') ?? $itemSlot->attributes->get('imgClass')" />
-        </x-media-gallery::merged-slot>
-    @endif
+    @php($slot = $i === 0 ? $spotlightSlot : $itemSlot)      
+    <x-media-gallery::merged-slot :merge="$slot">
+        <x-media-gallery::media-gallery.item :item="$item" :videoIndicator="$videoIndicator" :imgClass="$slot->attributes->get('img-class') ?? $slot->attributes->get('imgClass')" :size="$slot->attributes->get('size')" />
+    </x-media-gallery::merged-slot>
 @endforeach

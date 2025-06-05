@@ -2,7 +2,8 @@
     'item' => null,
     'slot' => null,
     'imgClass' => '',
-    'videoIndicator' => null
+    'videoIndicator' => null,
+    'size' => 'md'
 ])
 
 <button {{ $attributes->class('overflow-hidden group relative block') }} 
@@ -15,7 +16,7 @@
         <x-media-gallery::media-item 
             :item="$item" 
             class="{{ $imgClass }}"
-            size="xs" />
+            size="{{ $size }}" />
 
         @if($item->isVideo())
             <x-media-gallery::merged-slot 

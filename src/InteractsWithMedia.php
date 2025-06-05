@@ -13,9 +13,8 @@ trait InteractsWithMedia {
         return MediaItem::class;
     }
 
-    public function getFirstMediaUrl(string $conversion): string {
-        $media = $this->getFirstMedia();
-        return $media->getUrl($conversion);
+    public function getFallbackMediaUrl(string $collectionName = 'default', string $conversionName = '') {
+        return 'data:image/gif;base64,R0lGODlhAQABAHAAACwAAAAAAQABAIHu7u4AAAAAAAAAAAACAkQBADs=';
     }
 
     public function registerMediaCollections(): void {

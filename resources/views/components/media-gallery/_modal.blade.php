@@ -18,7 +18,8 @@
     x-transition:enter-end="opacity-100"
     x-transition:leave-start="opacity-100"
     x-transition:leave-end="translate-y-5 opacity-0"
-    x-bind:style="`--modal-direction: ${modal.direction};`">
+    x-bind:style="`--modal-direction: ${modal.direction};`"
+    style="display: none;">
 
     {{-- back button --}}
     <x-media-gallery::media-gallery._modal-button action="back" :button="$backButtonSlot" />
@@ -40,12 +41,16 @@
                         isVisible() { 
                             this.updateElementSize();
                             return item === modal.getCurrentItem();
+                        },
+                        getSrc() {
+                            this.updateElementSize();
+                            return item.element.attributes.src;
                         }
                     }"
 
                     x-bind:class="`absolute rounded-lg overflow-hidden object-cover ${isVisible() ? 'z-50' : 'z-40'} ${modal.direction === 0 ? '' : 'transition ease-in-out duration-150'}`"
 
-                    x-bind:src="item.element.attributes.src" 
+                    x-bind:src="getSrc()" 
                     x-bind:alt="item.element.attributes.alt"
                     x-on:resize.window="updateElementSize()"
                     x-show="isVisible()"
