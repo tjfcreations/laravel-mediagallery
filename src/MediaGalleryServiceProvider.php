@@ -23,6 +23,6 @@ class MediaGalleryServiceProvider extends PackageServiceProvider {
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'media-gallery');
         $this->publishes([
             __DIR__.'/../resources/js' => public_path('vendor/tjall/laravel-mediagallery/js'),
-        ], 'public');
+        ], 'laravel-assets');
     }
 }
