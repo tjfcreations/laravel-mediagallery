@@ -15,4 +15,5 @@
         alt=""
     @endif
     height="1920" 
-    width="1920"  />
+    width="1920"
+    loading="lazy"  />
