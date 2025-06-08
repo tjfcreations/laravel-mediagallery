@@ -11,10 +11,9 @@ use Filament\Forms\Components\Placeholder;
 use Illuminate\Support\HtmlString;
 use Filament\Forms\Components\Component;
 use Illuminate\Support\Facades\Blade;
+use Tjall\MediaGallery\Models\MediaItem;
 
 class MediaGalleryEditorRepeater extends Repeater {
-    protected $records = [];
-
     protected function setUp(): void {
         parent::setUp();
 
@@ -28,7 +27,6 @@ class MediaGalleryEditorRepeater extends Repeater {
             ->reorderable('order_column')
             ->reorderableWithDragAndDrop(true)
             ->columnSpanFull()
-            ->defaultItems(0)
             ->grid([
                 'default' => 2,
                 'md' => 3,
@@ -44,13 +42,11 @@ class MediaGalleryEditorRepeater extends Repeater {
                 fn(MediaGalleryEditorRepeater $component): Action => $component->getUploadSuccessAction(),
                 fn(MediaGalleryEditorRepeater $component): Action => $component->getDeleteAction()
             ])
+            ->relationship('media')
             ->afterStateHydrated(static function (MediaGalleryEditorRepeater $component, ?array $state): void {
-                $record = $component->getRecord();
-                if(!$record || !$record->media) return; 
-
                 $items = [];
 
-                $media_items = $record->media->sortBy('order_column');
+                $media_items = $component->getMediaItemsFromState($state);
                 foreach ($media_items as $media_item) {
                     $items["item-{$media_item->id}"] = [
                         'media_item' => $media_item,
@@ -61,12 +57,18 @@ class MediaGalleryEditorRepeater extends Repeater {
                 }
 
                 $component->state($items);
-
                 $component->callAfterStateUpdated();
             })
-            ->dehydrateStateUsing(function(MediaGalleryEditorRepeater $component) {
+            ->saveRelationshipsUsing(function(MediaGalleryEditorRepeater $component) {
                 return $component->handleSave();
             });
+    }
+
+    public function getMediaItemsFromState(array $state) {
+        return collect($state)
+            ->filter(fn($data) => isset($data['id']))
+            ->map(fn($data) => MediaItem::find($data['id']))
+            ->sortBy('order_column');
     }
 
     public function getUploadStartAction() {

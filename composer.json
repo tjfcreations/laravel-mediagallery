@@ -20,7 +20,8 @@
         "spatie/laravel-medialibrary": "^11.12",
         "filament/forms": "^3.3",
         "spatie/laravel-html": "^3.12",
-        "spatie/laravel-package-tools": "^1.92"
+        "spatie/laravel-package-tools": "^1.92",
+        "plank/laravel-mediable": "^6.3"
     },
     "extra": {
         "laravel": {
