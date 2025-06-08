@@ -128,12 +128,16 @@ class MediaGalleryEditorRepeater extends Repeater {
             // check if the media item already exists
             if(!isset($items[$item_id]['media_item'])) {
                 // save the media item
-                $items[$item_id]['media_item'] = $record
-                    ->addMedia($file->getPathname())
-                    ->toMediaCollection();
+                try {
+                    $items[$item_id]['media_item'] = $record
+                        ->addMedia($file->getPathname())
+                        ->toMediaCollection();
+                } catch(\Exception $e) {
+                    continue;
+                }
             }
 
-            $keep_media_items[$items[$item_id]['media_item']->id] = true;
+            $keep_media_items[$items[$item_id]['media_item']?->id] = true;
         }
 
         // update media item meta and order
