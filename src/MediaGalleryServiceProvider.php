@@ -19,8 +19,9 @@ class MediaGalleryServiceProvider extends PackageServiceProvider {
             ->discoversMigrations();
     }
 
-    public function boot() {
+    public function bootingPackage() {
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'media-gallery');
+        
         $this->publishes([
             __DIR__.'/../resources/js' => public_path('vendor/tjall/laravel-mediagallery/js'),
         ], 'laravel-assets');
