@@ -1,6 +1,8 @@
 @php
     $accept = implode(', ', $getAcceptedFileTypes());
     $statePath = $getStatePath();
+
+    $repeaterStatePath = str_replace('-file-upload', '-repeater', $statePath);
 @endphp
 
 <div x-data="{
@@ -9,7 +11,7 @@
     uploadId: 0,
     progress: 0,
     init() {
-        $store.uploads = {};
+        $store['uploads'] = {};
     },
     handleFileSelect(event) {
         if (!event.target.files.length) return;
@@ -26,7 +28,7 @@
 
         this.mountAction('onUploadStart', { uploadIds }).then(() => {
             uploadIds.forEach(uploadId => {
-                const upload = $store.uploads[uploadId];
+                const upload = $store['uploads'][uploadId];
 
                 $wire.upload('{{ $statePath }}#upload-'+uploadId, upload.file,
                     success => {
@@ -47,17 +49,15 @@
     },
     registerUpload(data) {
         const uploadId = this.uploadId++;
-        $store.uploads[uploadId] = { ...data, isUploading: true, progress: 0 };
-
-        console.log($store);
+        $store['uploads'][uploadId] = { ...data, isUploading: true, progress: 0 };
 
         return uploadId;
     },
     updateUpload(uploadId, data) {
-        $store.uploads[uploadId] = { ...$store.uploads[uploadId], ...data };
+        $store['uploads'][uploadId] = { ...$store['uploads'][uploadId], ...data };
     },
     mountAction(name, arguments) {
-        return $wire.mountFormComponentAction('data._media-gallery-editor-repeater', name, arguments);
+        return $wire.mountFormComponentAction('{{ $repeaterStatePath }}', name, arguments);
     }
 }" class="w-full">
     <div class="flex flex-col items-center justify-center w-full relative" x-on:drop="isDroppingFile = false"

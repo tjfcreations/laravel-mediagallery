@@ -12,8 +12,16 @@ use Illuminate\Support\HtmlString;
 use Filament\Forms\Components\Component;
 use Illuminate\Support\Facades\Blade;
 use Tjall\MediaGallery\Models\MediaItem;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
+use Filament\Pages\SettingsPage;
+use Spatie\LaravelSettings\Models\SettingsProperty;
+use Tjall\MediaGallery\Helpers\RecordWithMedia;
 
 class MediaGalleryEditorRepeater extends Repeater {
+    protected ?MediaGalleryEditor $parent = null;
+
     protected function setUp(): void {
         parent::setUp();
 
@@ -24,8 +32,6 @@ class MediaGalleryEditorRepeater extends Repeater {
             ->extraItemActions([
                 $this->getEditMetaAction(),
             ])
-            ->reorderable('order_column')
-            ->reorderableWithDragAndDrop(true)
             ->columnSpanFull()
             ->grid([
                 'default' => 2,
@@ -43,7 +49,9 @@ class MediaGalleryEditorRepeater extends Repeater {
                 fn(MediaGalleryEditorRepeater $component): Action => $component->getDeleteAction()
             ])
             ->relationship('media')
-            ->afterStateHydrated(static function (MediaGalleryEditorRepeater $component, ?array $state): void {
+            ->afterStateHydrated(static function (MediaGalleryEditorRepeater $component, mixed $state): void {
+                if(!is_array($state)) return;
+                
                 $items = [];
 
                 $media_items = $component->getMediaItemsFromState($state);
@@ -62,6 +70,11 @@ class MediaGalleryEditorRepeater extends Repeater {
             ->saveRelationshipsUsing(function(MediaGalleryEditorRepeater $component) {
                 return $component->handleSave();
             });
+    }
+
+    public function parent(MediaGalleryEditor $parent): static {
+        $this->parent = $parent;
+        return $this;
     }
 
     public function getMediaItemsFromState(array $state) {
@@ -104,16 +117,17 @@ class MediaGalleryEditorRepeater extends Repeater {
                 $component->callAfterStateUpdated();
             });
     }
-
-    protected function handleSave() {
+    
+    public function handleSave() {
         $record = $this->getRecord();
         $items = $this->getState();
         $data = $this->getLivewire()->data;
+
         
         // merge all uploaded files into a single array
         $files = [];
         foreach($data as $key => $file) {
-            if(!str_starts_with($key, '_media-gallery-editor-file-upload#')) continue;
+            if(!str_starts_with($key, '_media-gallery-editor-') || !str_contains($key, '#upload-')) continue;
 
             $item_id = explode('#', $key)[1];
             $files[$item_id] = $file;
@@ -129,10 +143,14 @@ class MediaGalleryEditorRepeater extends Repeater {
             if(!isset($items[$item_id]['media_item'])) {
                 // save the media item
                 try {
-                    $items[$item_id]['media_item'] = $record
-                        ->addMedia($file->getPathname())
-                        ->toMediaCollection();
+                    if(method_exists($record, 'addMedia')) {
+                        // if the record has an addMedia method, use it
+                        $items[$item_id]['media_item'] = $record
+                            ->addMedia($file)
+                            ->toMediaCollection($this->parent->collectionName);
+                    }
                 } catch(\Exception $e) {
+                    throw $e;
                     continue;
                 }
             }
@@ -154,7 +172,8 @@ class MediaGalleryEditorRepeater extends Repeater {
         }
 
         // delete media items that the user deleted
-        foreach($record->media as $media_item) {
+        $existing_media_items = $this->getRelationship()->getQuery()->get()->all();
+        foreach($existing_media_items as $media_item) {
             if(isset($keep_media_items[$media_item->id])) continue;
             $media_item->delete();
         }
@@ -231,5 +250,42 @@ class MediaGalleryEditorRepeater extends Repeater {
             ->action(function (array $arguments, MediaGalleryEditorRepeater $component, array $data) {
                 return $this->setItemMeta($arguments['item'], $data);
             });
+    }
+
+    public function getModelInstance(): ?Model {
+        return $this->getRelatedSettingsProperty() ?? parent::getModelInstance();
+    }
+
+    public function getRecord(): ?Model {
+        return $this->getRelatedSettingsProperty() ?? parent::getRecord();
+    }
+
+    public function getRelationship(): HasOneOrMany | BelongsToMany | null {
+        $settingsProperty = $this->getRelatedSettingsProperty();
+        
+        if(isset($settingsProperty)) {
+            return $settingsProperty->morphMany(MediaItem::class, 'model');
+        }
+
+        return parent::getRelationship();
+    }
+
+    public function getRelatedSettingsProperty(): SettingsProperty | null {
+        $livewire = $this->getLivewire();
+        if($livewire instanceof SettingsPage) {
+            $livewire = $this->getLivewire();
+            $settings = $livewire::class::getSettings();
+            $group = $settings::group();
+            $name = $this->parent->collectionName;
+            
+            $setting = SettingsProperty::query()
+                ->where('group', $group)
+                ->where('name', $name)
+                ->first();
+
+            return $setting;
+        }
+
+        return null;
     }
 }

@@ -3,11 +3,8 @@
 namespace Tjall\MediaGallery\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Spatie\Image\Enums\Fit;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MediaItem extends Media {
     /** @use HasFactory<\Database\Factories\MediaItemFactory> */
