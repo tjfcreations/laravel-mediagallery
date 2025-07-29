@@ -10,9 +10,6 @@
 
     $item ??= $component->getContainer()->getRawState();
 
-    $statePath = $component->getParentRepeater()->getStatePath();
-    $fileUploadStatePath = str_replace('-repeater', '-file-upload', $statePath);
-
     $is_upload = isset($item['upload_id']);
     $alpine_store = $is_upload ? "\$store['uploads'][{$item['upload_id']}]" : '{}';
 
