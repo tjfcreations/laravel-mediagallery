@@ -5,9 +5,15 @@
     'thumbnail' => false
 ])
 
+@php
+    if(isset($item)) {
+        $url = $item->getUrl(isset($size) ? $size : 'md');
+    }
+@endphp
+
 <img 
     {{ $attributes->class(['object-cover', $class]) }}
-    @if(isset($item))
+    @if(isset($url))
         src="{{ $item->getUrl(isset($size) ? $size : 'md') }}" 
         alt="{{ $item->getDescription() }}"
     @else
