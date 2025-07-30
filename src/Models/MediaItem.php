@@ -23,10 +23,10 @@ class MediaItem extends Media {
     public function getUrl(string $conversionName = ''): string {
         if (!is_int($this->size) || $this->size <= 1) {
             if(app()->environment('local')) {
-                $opts = MediaItem::CONVERSIONS[$conversionName] ?? MediaItem::CONVERSIONS['md'];
+                $width = 720;
                 $ratio = (($this->id % 9) + 6) / 10;
-                $height = $opts['width'] * $ratio;
-                return "https://picsum.photos/seed/{$this->id}/{$opts['width']}/{$height}";
+                $height = $width * $ratio;
+                return "https://picsum.photos/seed/{$this->id}/{$width}/{$height}";
             }
         }
 
@@ -42,20 +42,53 @@ class MediaItem extends Media {
     }
 
     public function serialize() {
-        $sources = [];
-        foreach (MediaItem::CONVERSIONS as $name => $opts) {
-            $sources[$name] = [ 
-                'url' => $this->getUrl($name),
-                'width' => $opts['width'],
-                'height' => $opts['height']
-            ];
-        }
+        $sources = $this->getAvailableSources();
 
         return [
             'uuid' => $this->uuid,
             'sources' => $sources,
             'meta' => $this->getMeta()
         ];
+    }
+
+    public function getAvailableSources() {
+        $sources = [];
+
+        $shouldSaveSizes = false;
+        $conversions = $this->getGeneratedConversions();
+        $sizes = $this->getCustomProperty('sizes');
+        foreach ($conversions as $conversionName => $isGenerated) {
+            if(!$isGenerated) continue;
+            
+            $size = [];
+
+            try {
+                if(!isset($sizes[$conversionName])) {
+                    list($width, $height) = getimagesize($this->getPath($conversionName));
+                    $sizes[$conversionName] = [$width, $height];
+                    $shouldSaveSizes = true;
+                }
+
+                $size = $sizes[$conversionName];
+            } catch(\Exception $e) {
+                continue;
+            }
+            
+            if(isset($size[0]) && isset($size[1])) {
+                $sources[$conversionName] = [ 
+                    'url' => $this->getUrl($conversionName),
+                    'width' => $size[0],
+                    'height' => $size[1]
+                ];
+            }
+        }
+
+        if($shouldSaveSizes) {
+            $this->setCustomProperty('sizes', $sizes);
+            $this->save();
+        }
+
+        return $sources;
     }
 
     public function getDescription() {

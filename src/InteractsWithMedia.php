@@ -5,6 +5,7 @@ namespace Tjall\MediaGallery;
 use Spatie\MediaLibrary\InteractsWithMedia as InteractsWithSpatieMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tjall\MediaGallery\Models\MediaItem;
+use Spatie\Image\Enums\Fit;
 
 trait InteractsWithMedia {
     use InteractsWithSpatieMedia;
@@ -19,12 +20,31 @@ trait InteractsWithMedia {
     }
 
     public function registerMediaConversions(?Media $media = null): void {
-        foreach(MediaItem::CONVERSIONS as $name => $opts) {
-            $this->addMediaConversion($name)
-                ->fit($opts['fit'])
-                ->width($opts['width'])
-                ->height($opts['height'])
-                ->sharpen(@$opts['sharpen'] ?? 0);
-        }
+        $this->addMediaConversion('xs')
+            ->width(180)
+            ->height(180)
+            ->fit(Fit::Contain)
+            ->sharpen(10);
+
+        $this->addMediaConversion('sm')
+            ->width(360)
+            ->height(360)
+            ->fit(Fit::Contain)
+            ->sharpen(10);
+
+        $this->addMediaConversion('md')
+            ->width(720)
+            ->height(720)
+            ->fit(Fit::Contain);
+
+        $this->addMediaConversion('lg')
+            ->width(1080)
+            ->height(1080)
+            ->fit(Fit::Contain);
+
+        $this->addMediaConversion('xl')
+            ->width(1440)
+            ->height(1440)
+            ->fit(Fit::Contain);
     }
 }
