@@ -6,7 +6,7 @@
     'size' => 'md'
 ])
 
-<button {{ $attributes->class('overflow-hidden group relative block') }} 
+<button {{ $attributes->class('overflow-hidden group relative block outline-none') }} 
     x-init="modal.registerItem(@js($item->serialize()), $el.querySelector('img'))"
     x-on:click="modal.openByUuid('{{ $item->uuid }}')">
     
