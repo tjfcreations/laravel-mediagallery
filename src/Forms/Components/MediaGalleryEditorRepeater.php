@@ -17,7 +17,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
 use Filament\Pages\SettingsPage;
 use Spatie\LaravelSettings\Models\SettingsProperty;
-use Tjall\MediaGallery\Helpers\RecordWithMedia;
+use Spatie\LaravelSettings\Settings;
+use Tjall\MediaGallery\SettingsCasts\MediaGalleryCast;
+use Tjall\MediaGallery\Support\RecordWithMedia;
 
 class MediaGalleryEditorRepeater extends Repeater {
     protected ?MediaGalleryEditor $parent = null;
@@ -148,6 +150,22 @@ class MediaGalleryEditorRepeater extends Repeater {
                         $items[$item_id]['media_item'] = $record
                             ->addMedia($file)
                             ->toMediaCollection($this->parent->collectionName);
+                    } else {
+                        // create a helper record to insert the media into
+                        // the database
+                        $recordWithMedia = new RecordWithMedia();
+                        $recordWithMedia->id = 0;
+                        $recordWithMedia->exists = true;
+                        
+                        // update the model related to the media item
+                        $mediaItem = $recordWithMedia
+                            ->addMedia($file)
+                            ->toMediaCollection();
+                        $mediaItem->model_type = get_class($record);
+                        $mediaItem->model_id = $record->id;
+                        $mediaItem->save();
+
+                        $items[$item_id]['media_item'] = $mediaItem;
                     }
                 } catch(\Exception $e) {
                     throw $e;
@@ -176,6 +194,16 @@ class MediaGalleryEditorRepeater extends Repeater {
         foreach($existing_media_items as $media_item) {
             if(isset($keep_media_items[$media_item->id])) continue;
             $media_item->delete();
+        }
+
+        // Update settings value
+        $settingsClass = $this->getRelatedSettingsClass();
+        if($settingsClass) {
+            $settings = app($settingsClass);
+
+            $name = $this->parent->collectionName;
+            $ids = array_keys($keep_media_items);
+            $settings->$name = (new MediaGalleryCast())->get($ids);
         }
 
         $this->state($items);
@@ -270,22 +298,33 @@ class MediaGalleryEditorRepeater extends Repeater {
         return parent::getRelationship();
     }
 
-    public function getRelatedSettingsProperty(): SettingsProperty | null {
+    public function getRelatedSettingsClass(): string | null {
         $livewire = $this->getLivewire();
         if($livewire instanceof SettingsPage) {
             $livewire = $this->getLivewire();
-            $settings = $livewire::class::getSettings();
-            $group = $settings::group();
-            $name = $this->parent->collectionName;
-            
-            $setting = SettingsProperty::query()
-                ->where('group', $group)
-                ->where('name', $name)
-                ->first();
-
-            return $setting;
+            $settingsClass = $livewire::class::getSettings();
+            return $settingsClass;
         }
 
         return null;
+    }
+
+    public function getRelatedSettingsProperty(): SettingsProperty | null {
+        $settingsClass = $this->getRelatedSettingsClass();
+        if(!$settingsClass) return null;
+
+        $group = $settingsClass::group();
+        $name = $this->parent->collectionName;
+        
+        $setting = SettingsProperty::query()
+            ->where('group', $group)
+            ->where('name', $name)
+            ->first();
+
+        if(!isset($setting)) {
+            throw new \Exception("No setting property called '$name' in group '$group'. Please ensure the Filament component is named correctly.");
+        }
+
+        return $setting;
     }
 }

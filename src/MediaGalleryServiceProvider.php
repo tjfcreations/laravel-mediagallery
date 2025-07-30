@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Config;
 use Tjall\MediaGallery\Support\HashedPathGenerator;
 use Tjall\MediaGallery\Support\HashedFileNamer;
 use Tjall\MediaGallery\Models\MediaItem;
+use Tjall\MediaGallery\Support\MediaGallery;
+use Tjall\MediaGallery\SettingsCasts\MediaGalleryCast;
 
 class MediaGalleryServiceProvider extends PackageServiceProvider {
     public function configurePackage(Package $package): void {
@@ -34,5 +36,7 @@ class MediaGalleryServiceProvider extends PackageServiceProvider {
         Config::set('media-library.disk_name', config('media-gallery.disk_name', 'public'));
         Config::set('media-library.path_generator', HashedPathGenerator::class);
         Config::set('media-library.file_namer', HashedFileNamer::class);
+
+        Config::set('settings.global_casts.' . MediaGallery::class, MediaGalleryCast::class);
     }
 }

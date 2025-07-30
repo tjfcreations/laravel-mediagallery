@@ -1,5 +1,5 @@
 <?php
-    namespace Tjall\MediaGallery\Helpers;
+    namespace Tjall\MediaGallery\Support;
 
     use Tjall\MediaGallery\InteractsWithMedia;
     use Tjall\MediaGallery\HasMedia;
