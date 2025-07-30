@@ -37,6 +37,16 @@ class MediaItem extends Media {
         return parent::getUrl();
     }
 
+    public function getDataUrl(string $conversionName = '') {
+        $path = $this->getPath($conversionName);
+
+        $mime = mime_content_type($path);
+        $contents = file_get_contents($path);
+        $base64 = base64_encode($contents);
+
+        return "data:{$mime};base64,{$base64}";
+    }
+
     public function isVideo() {
         return false;
     }
