@@ -5,9 +5,13 @@ namespace Tjall\MediaGallery\Forms\Components;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Actions\Action;
 use Illuminate\Contracts\Support\Htmlable;
+use Filament\Forms\Components\Concerns;
 use Closure;
 
 class MediaGalleryEditor extends Grid {
+    use Concerns\HasHelperText;
+    use Concerns\HasLabel;
+
     public ?string $collectionName = null;
     
     public ?MediaGalleryEditorRepeater $repeater = null;
@@ -21,11 +25,6 @@ class MediaGalleryEditor extends Grid {
         $static->configure();
 
         return $static;
-    }
-
-    public function label(string | Htmlable | Closure | null $label): static {
-        $this->repeater->label($label);
-        return $this;
     }
     
     protected function setUp(): void {
@@ -55,5 +54,21 @@ class MediaGalleryEditor extends Grid {
                 $this->repeater,
                 $this->fileUpload
             ]);
+    }
+
+    public function hiddenLabel(bool | Closure $condition = true): static {
+        $this->repeater->hiddenLabel($condition);
+        return $this;
+    }
+
+    public function label(string | Htmlable | Closure | null $label): static {
+        $this->repeater->label($label);
+        return $this;
+    }
+
+    public function helperText(string | Htmlable | Closure | null $text): static
+    {
+        $this->repeater->helperText($text);
+        return $this;
     }
 }

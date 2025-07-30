@@ -19,7 +19,7 @@ use Filament\Pages\SettingsPage;
 use Spatie\LaravelSettings\Models\SettingsProperty;
 use Spatie\LaravelSettings\Settings;
 use Tjall\MediaGallery\SettingsCasts\MediaGalleryCast;
-use Tjall\MediaGallery\Support\RecordWithMedia;
+use Tjall\MediaGallery\Support\SettingsPropertyMediaContainer;
 
 class MediaGalleryEditorRepeater extends Repeater {
     protected ?MediaGalleryEditor $parent = null;
@@ -153,16 +153,14 @@ class MediaGalleryEditorRepeater extends Repeater {
                     } else {
                         // create a helper record to insert the media into
                         // the database
-                        $recordWithMedia = new RecordWithMedia();
-                        $recordWithMedia->id = 0;
-                        $recordWithMedia->exists = true;
+                        $mediaContainer = new SettingsPropertyMediaContainer();
+                        $mediaContainer->id = $record->id;
+                        $mediaContainer->exists = true;
                         
                         // update the model related to the media item
-                        $mediaItem = $recordWithMedia
+                        $mediaItem = $mediaContainer
                             ->addMedia($file)
                             ->toMediaCollection();
-                        $mediaItem->model_type = get_class($record);
-                        $mediaItem->model_id = $record->id;
                         $mediaItem->save();
 
                         $items[$item_id]['media_item'] = $mediaItem;
@@ -292,7 +290,9 @@ class MediaGalleryEditorRepeater extends Repeater {
         $settingsProperty = $this->getRelatedSettingsProperty();
         
         if(isset($settingsProperty)) {
-            return $settingsProperty->morphMany(MediaItem::class, 'model');
+            $mediaContainer = new SettingsPropertyMediaContainer();
+            $mediaContainer->id = $settingsProperty->id;
+            return $mediaContainer->morphMany(MediaItem::class, 'model');
         }
 
         return parent::getRelationship();

@@ -5,6 +5,6 @@
     use Tjall\MediaGallery\HasMedia;
     use Illuminate\Database\Eloquent\Model;
 
-    class RecordWithMedia extends Model implements HasMedia {
+    class SettingsPropertyMediaContainer extends Model implements HasMedia {
         use InteractsWithMedia;
     }
